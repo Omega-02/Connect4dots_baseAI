@@ -1,6 +1,7 @@
 import copy
 import math
 import random
+import os
 
 def create_board():
     global turn
@@ -10,9 +11,10 @@ def create_board():
 
 
 def display_board(x):
+    os.system('cls'if os.name == 'nt' else 'clear')
     print(f"Current Turn: {turn}")
     for i in x:
-        print(i)
+        print(f"{i}  ")
 
 
 def guess_row_gravity(b,c):
@@ -178,7 +180,7 @@ def end_point(b):
     return win_cond(b,p1) or win_cond(b,p2) or len(if_valid(b)) == 0
 
 
-def minimax(b,depth,playerswitch):
+def minimax(b,depth,alpha,beta,playerswitch):
     valid_loc = if_valid(b)
     if_endpoint = end_point(b)
 
@@ -199,11 +201,18 @@ def minimax(b,depth,playerswitch):
         best_col = random.choice(valid_loc)
         for c in valid_loc:
             b_copy = simulated_gravity(b,p2,c)
-            new_score = minimax(b_copy,depth-1,False)[1] #1 is the score 2nd return
+            new_score = minimax(b_copy,depth-1,alpha,beta,False)[1] #1 is the score 2nd return
 
             if new_score > value:
                 value = new_score
                 best_col = c
+
+            #alpha update
+            alpha = max(alpha,value)
+            #prune
+            if alpha >= beta:
+                break
+
         return best_col, value
     #Player's Turn (minize AI score)
     else:
@@ -211,11 +220,18 @@ def minimax(b,depth,playerswitch):
         best_col = random.choice(valid_loc)
         for c in valid_loc:
             b_copy = simulated_gravity(b,p1,c)
-            new_score = minimax(b_copy,depth-1,True)[1]
+            new_score = minimax(b_copy,depth-1,alpha,beta,True)[1]
 
             if new_score < value:
                 value = new_score
                 best_col = c
+
+                #beta update 
+                beta = min(beta,value)
+                #prune
+                if beta <= alpha:
+                    break
+
         return best_col, value
 
 
@@ -237,8 +253,8 @@ while True:
         print("-----------------------\n----PLAYER WINS!!!!----\n-----------------------")
         break
     #BOT
-    print("AI IS THINKING.....!")
-    ai_c,minimax_score = minimax(board,4,True)
+    print("---AI IS THINKING....!---")
+    ai_c,minimax_score = minimax(board,6,-math.inf,math.inf,True)
     ai_r = guess_row_gravity(board,ai_c)
     if ai_r is not None:
         gravity_drop(board,p2,ai_r,ai_c)
